@@ -1,0 +1,6 @@
+.vscode/
+*.code-workspace
+*.mp4
+**/media
+*.pyc
+.DS_Store
