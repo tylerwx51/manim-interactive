@@ -1,26 +1,17 @@
 from manim import *
 from copy import deepcopy
+import math
 
 class AnimateSpring(Scene):
     def construct(self):
 
-        # all_points = [
-        #     np.array([[-3, 0, 0], [-3, 1, 0]]),
-        #     np.array([[-3, 0, 0], [-2.5, 1, 0]]),
-        #     np.array([[-2.5, 1, 0], [-2, 0, 0]]),
-        #     np.array([[-2, 0, 0], [-1.5, 1, 0]]),
-        #     np.array([[-1.5, 1, 0], [-1, 0, 0]]),
-        #     np.array([[-1, 0, 0], [-0.5, 1, 0]]),
-        #     np.array([[-0.5, 1, 0], [-0.5, 0, 0]])
-        # ]
-
         anchor = [-3, 0, 0]
 
         # relaxed_spring = VGroup(*[Line(*points) for points in all_points])
-        relaxed_spring = create_spring(anchor, 1)
-        compress_spring(relaxed_spring)
+        relaxed_spring = create_spring(anchor, 1, math.pi *0)
+        # compress_spring(relaxed_spring)
         # compressed_spring = VGroup(*[Line(*points*np.array([0.5, 1, 1])) for points in all_points])
-        compressed_spring = create_spring(anchor, 0.5)
+        compressed_spring = create_spring(anchor, 0.5, math.pi *0)
         rs1 = deepcopy(relaxed_spring)
 
         self.play(Transform(rs1, compressed_spring))
@@ -28,18 +19,17 @@ class AnimateSpring(Scene):
         self.play(Transform(deepcopy(compressed_spring), relaxed_spring))
     
 
-def create_spring(anchor, scale):
+def create_spring(anchor, scale, angle):
 
     anchor = np.array(anchor)
 
     all_points = [
-        np.array([anchor, anchor + np.array([0, -2*scale, 0])]),
-        np.array([anchor + np.array([0, -2*scale, 0]), anchor + np.array([scale, 0, 0])]),
-        np.array([anchor + np.array([scale, 0, 0]), anchor + np.array([2*scale, -2*scale, 0])]),
-        np.array([anchor + np.array([2*scale, -2*scale, 0]), anchor + np.array([3*scale, 0, 0])]),
-        np.array([anchor + np.array([3*scale, 0, 0]), anchor + np.array([4*scale, -2*scale, 0])]),
-        np.array([anchor + np.array([4*scale, -2*scale, 0]), anchor + np.array([5*scale, 0, 0])]),
-        np.array([anchor + np.array([5*scale, 0, 0]), anchor + np.array([5*scale, -2*scale, 0])]),
+        np.array([anchor, anchor + np.array([scale * math.sin(angle), -scale * math.cos(angle), 0])]),
+        # np.array([anchor + np.array([scale, 0, 0]), anchor + np.array([2*scale, -2*scale, 0])]),
+        # np.array([anchor + np.array([2*scale, -2*scale, 0]), anchor + np.array([3*scale, 0, 0])]),
+        # np.array([anchor + np.array([3*scale, 0, 0]), anchor + np.array([4*scale, -2*scale, 0])]),
+        # np.array([anchor + np.array([4*scale, -2*scale, 0]), anchor + np.array([5*scale, 0, 0])]),
+        # np.array([anchor + np.array([5*scale, 0, 0]), anchor + np.array([5*scale, -2*scale, 0])]),
     ]
 
     return VGroup(*[Line(*points) for points in all_points])
