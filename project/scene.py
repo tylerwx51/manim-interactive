@@ -13,7 +13,7 @@ class AnimateSpring(Scene):
 
         for _ in range(5):
             rs1, rs2 = spring.get_relaxed_springs(2)
-            cs, = spring.get_compressed_spring()
+            cs, = spring.get_compressed_springs()
             self.play(Transform(rs1, cs))
             self.remove(rs1)
             self.play(Transform(cs, rs2))
@@ -54,7 +54,7 @@ class Spring:
   
         return tuple(deepcopy(self.relaxed_spring) for _ in range(num_springs))
     
-    def get_compressed_spring(self, num_springs: int=1) -> Tuple:
+    def get_compressed_springs(self, num_springs: int=1) -> Tuple:
         """Returns deep copies of the compressed spring.
 
         Args:
