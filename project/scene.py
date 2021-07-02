@@ -1,48 +1,124 @@
-from manim import *
 from copy import deepcopy
-import math
+from math import cos, pi, sin
+from typing import Union, Tuple
+
+from manim import *
+import numpy as np
+
 
 class AnimateSpring(Scene):
     def construct(self):
 
-        anchor = [-3, 0, 0]
+        spring = Spring(anchor=[-3, -1, 0], scale=0.5, angle=pi * 0.25)
 
-        # relaxed_spring = VGroup(*[Line(*points) for points in all_points])
-        relaxed_spring = create_spring(anchor, 1, math.pi *0)
-        # compress_spring(relaxed_spring)
-        # compressed_spring = VGroup(*[Line(*points*np.array([0.5, 1, 1])) for points in all_points])
-        compressed_spring = create_spring(anchor, 0.5, math.pi *0)
-        rs1 = deepcopy(relaxed_spring)
+        for _ in range(5):
+            rs1, rs2 = spring.get_relaxed_springs(2)
+            cs, = spring.get_compressed_spring()
+            self.play(Transform(rs1, cs))
+            self.remove(rs1)
+            self.play(Transform(cs, rs2))
+            self.remove(cs)
 
-        self.play(Transform(rs1, compressed_spring))
-        self.remove(rs1)
-        self.play(Transform(deepcopy(compressed_spring), relaxed_spring))
+
+def ccw_rotation_matrix_3x3_no_z(angle: float) -> np.ndarray:
+    """Generates a 3x3 rotation matrix for a counter-clockwise rotation
+    in the x-y plane. The third dimension is included for compatibility
+    with Mx3 matrices with z dimension equal to zero.
+
+    Args:
+        angle (float): The angle to rotate by, given in radians.
+
+    Returns:
+        np.ndarray: A 3x3 counter-clockwise x-y plane rotation matrix.
+    """    
+    return np.array(
+        [[cos(angle), sin(angle), 0], [sin(angle), -cos(angle), 0], [0, 0, 0]]
+    )
+
+class Spring:
+
+    def __init__(self, anchor=[0, 0, 0], scale=1.0, angle=0):
+        self.relaxed_spring, self.compressed_spring = self.create_spring(anchor, scale, angle)
+
+    def get_relaxed_springs(self, num_springs: int=1) -> Tuple:
+        """Returns deep copies of the relaxed spring.
+
+        Args:
+            num_springs (int, optional): The number of spring copies
+                to return. Defaults to 1.
+
+        Returns:
+            Tuple: A tuple with num_springs copies of the relaxed
+            spring object.
+        """
+  
+        return tuple(deepcopy(self.relaxed_spring) for _ in range(num_springs))
     
+    def get_compressed_spring(self, num_springs: int=1) -> Tuple:
+        """Returns deep copies of the compressed spring.
 
-def create_spring(anchor, scale, angle):
+        Args:
+            num_springs (int, optional): The number of spring copies
+                to return. Defaults to 1.
 
-    anchor = np.array(anchor)
+        Returns:
+            Tuple: A tuple with num_springs copies of the compressed
+            spring object.
+        """
+        return tuple(deepcopy(self.compressed_spring) for _ in range(num_springs))
 
-    all_points = [
-        np.array([anchor, anchor + np.array([scale * math.sin(angle), -scale * math.cos(angle), 0])]),
-        # np.array([anchor + np.array([scale, 0, 0]), anchor + np.array([2*scale, -2*scale, 0])]),
-        # np.array([anchor + np.array([2*scale, -2*scale, 0]), anchor + np.array([3*scale, 0, 0])]),
-        # np.array([anchor + np.array([3*scale, 0, 0]), anchor + np.array([4*scale, -2*scale, 0])]),
-        # np.array([anchor + np.array([4*scale, -2*scale, 0]), anchor + np.array([5*scale, 0, 0])]),
-        # np.array([anchor + np.array([5*scale, 0, 0]), anchor + np.array([5*scale, -2*scale, 0])]),
-    ]
+    @staticmethod
+    def create_spring(anchor: list=[0, 0, 0], scale: Union[int, float]=1.0, angle: float=0) -> Tuple[VGroup]:
+        """Generates two VGroup objects, one with the lines for a relaxed
+        spring and one for a compressed spring. Spring can then be animated
+        by transforming between the two. Spring generates with an anchor
+        point at the origin and can be scaled, translated, or rotated to be
+        placed in any orientation.
 
-    return VGroup(*[Line(*points) for points in all_points])
+        Args:
+            anchor (list, optional): A list of length 3 giving the anchor
+                point for the spring. Defaults to [0, 0, 0].
+            scale (Union[int, float], optional): An optional value by which
+                to scale the spring. Defaults to 1.0.
+            angle (float, optional): An optional angle in radians by which
+                to rotate the spring. Defaults to 0.
 
+        Returns:
+            Tuple[VGroup]: Two VGroup objects, the first containing the
+            lines for the relaxed spring and the second containing the lines
+            for the compressed spring.
+        """
 
-def compress_spring(spring_object):
-    print(spring_object.get_top(), spring_object.get_left())
+        spring_lines = np.array(
+            [
+                np.array([[0, 0, 0], [0, 1, 0]]),
+                np.array([[0, 1, 0], [0.5, 0, 0]]),
+                np.array([[0.5, 0, 0], [1, 1, 0]]),
+                np.array([[1, 1, 0], [1.5, 0, 0]]),
+                np.array([[1.5, 0, 0], [2, 1, 0]]),
+                np.array([[2, 1, 0], [2.5, 0, 0]]),
+                np.array([[2.5, 0, 0], [2.5, 1, 0]]),
+            ]
+        )
 
+        scaled_spring = spring_lines * scale
+        rotated_spring = np.dot(scaled_spring, ccw_rotation_matrix_3x3_no_z(angle))
+        translated_spring = rotated_spring + anchor
+
+        scaled_compressed_spring = spring_lines * np.array([0.5, 1, 1]) * scale
+        rotated_compressed_spring = np.dot(
+            scaled_compressed_spring, ccw_rotation_matrix_3x3_no_z(angle)
+        )
+        translated_compressed_spring = rotated_compressed_spring + anchor
+
+        return VGroup(*[Line(*points) for points in translated_spring]), VGroup(
+            *[Line(*points) for points in translated_compressed_spring]
+        )
 
 
 class SquareToCircle(Scene):
     def construct(self):
-        circle =  Circle()  # create a circle
+        circle = Circle()  # create a circle
         circle.set_fill(PINK, opacity=0.5)  # set the color and transparency
 
         square = Square()  # create a square
@@ -76,6 +152,7 @@ class Shapes(Scene):
 
         self.add(circle, square, triangle)
         self.wait(1)
+
 
 class MobjectPlacement(Scene):
     def construct(self):
@@ -131,7 +208,7 @@ class SomeAnimations(Scene):
         self.play(FadeIn(square))
 
         # ... some move or rotate mobjects around...
-        self.play(Rotate(square, PI/4))
+        self.play(Rotate(square, PI / 4))
 
         # some animations remove mobjects from the screen
         self.play(FadeOut(square))
